@@ -1,17 +1,4 @@
 
-INSERT INTO `python_app`.`kanji` (`idkanji`, `unicode`, `nazwa`, `znaczenie`) VALUES ('10', '563565', 'jfj', 'test');
-INSERT INTO `python_app`.`kanji` (`idkanji`, `unicode`, `nazwa`, `znaczenie`) VALUES ('11', X'4e80', 'kami', 'tortoise');
-CREATE TABLE `kanji` (
-  `idkanji` int(11) NOT NULL,
-  `unicode` int(11) DEFAULT NULL,
-  `nazwa` varchar(45) DEFAULT NULL,
-  `znaczenie` varchar(45) DEFAULT NULL,
-  UNIQUE KEY `idkanji_UNIQUE` (`idkanji`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8
-
-
-## poprawna jest poniżej
-
 CREATE TABLE `python_app`.`kanjii` (
   `ID` int(11) NOT NULL AUTO_INCREMENT,
   `unicode` int(11) DEFAULT NULL,
