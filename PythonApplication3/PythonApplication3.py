@@ -209,4 +209,5 @@ top = Gra(master=root)
 m2.add(top)
 
 m1.mainloop()
+
 root.destroy()
