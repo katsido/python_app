@@ -6,8 +6,6 @@ import tkinter as tk
 import random
 from functools import partial
 
-
-
 config = {
   'user': 'root',
   'password': 'root',
@@ -28,9 +26,29 @@ class Gra(Frame):
         cursor.close()
         cnx.close()
 
-    def losuje_nowy_zestaw(self,number):
+    def koniec_rozgrywki(self):
+        messagebox.showinfo("Koniec", "Wynik Koncowy: "+str(self.menu.wynik_wartosc))
+
+    def nowa_rozgrywka(self):
+        self.menu.wynik_wartosc=0
+        self.menu.update()
+        self.nowe["state"]="normal"
+        self.numer_pytania=0
+        for i in range(self.ilosc_odpowiedzi):
+            self.button[i]["text"]="???"
+            self.button[i]["bg"]="white"
+            self.button[i]["state"]="disable"
+        self.pytanie["text"]="Pytanie nr "+str(self.numer_pytania)+" /10"
+        self.pytanie2["text"]="???"
+
+
+    def losuje_nowy_zestaw(self):
+        self.numer_pytania=self.numer_pytania+1
+
+
+
         print ("losujenowy nowe zadanie")
-        print (number)
+        #print (number)
         cnx = mysql.connector.connect(**config)
         cursor=cnx.cursor()
 
@@ -55,6 +73,7 @@ class Gra(Frame):
         print("poprawna odowiedz to"+str(self.poprawna_odpowiedz))
 
         #self.pytanie["text"]=str(lista[self.poprawna_odpowiedz][0])+"   "+str(lista[self.poprawna_odpowiedz][1])+"  "+lista[self.poprawna_odpowiedz][2]
+        self.pytanie["text"]="Pytanie nr "+str(self.numer_pytania)+" /10"
         znak=int(lista[self.poprawna_odpowiedz][0])
         #unicode_char = u"\u2713" 
         self.pytanie2["text"]=chr(znak)
@@ -63,6 +82,8 @@ class Gra(Frame):
             self.button[i]["text"]=lista[i][1]
             self.button[i]["bg"]="white"
             self.button[i]["state"]="normal"
+        if self.numer_pytania>=10:
+            self.nowe["state"]="disable"
     
     def wybrano_odpowiedz(self,number):
         print ("wybrano odpowiedz o nr "+str(number))
@@ -70,20 +91,25 @@ class Gra(Frame):
            self.button[i]["state"]="disable"
         if int(number)==int(self.poprawna_odpowiedz):
             self.button[number]["bg"]="green"
-            print("OK")
+            print("OK +10 punktow")
+            self.menu.wynik_wartosc=10+self.menu.wynik_wartosc
+            self.menu.update()
         else:
             self.button[number]["bg"]="red"
             self.button[self.poprawna_odpowiedz]["bg"]="green"
-            print("BLAD")
+            print("BLAD -10 punktow")
+            self.menu.wynik_wartosc=self.menu.wynik_wartosc-10
+            self.menu.update()
+        if self.numer_pytania>=10:
+            self.koniec_rozgrywki()
 
     def createWidgets(self):
 
         
-        self.hi_there = Button(self)
-        self.hi_there["text"] = "Nowa znaki",
-        
-        self.hi_there["command"] = partial(self.losuje_nowy_zestaw, 7)
-        self.hi_there.pack({"side": "left"})
+        self.nowe = Button(self)
+        self.nowe["text"] = "Nowa znaki",
+        self.nowe["command"] = partial(self.losuje_nowy_zestaw)
+        self.nowe.pack({"side": "left"})
 
         self.test = Button(self)
         self.test["text"] = "TEST",
@@ -112,8 +138,7 @@ class Gra(Frame):
         """
         self.button = []
         for i in range(self.ilosc_odpowiedzi):
-            self.button.append(Button(self, text='Game '+str(i+1),bd=10,width=10, command=partial(self.wybrano_odpowiedz, i)))
-       
+            self.button.append(Button(self, text='Game '+str(i+1),bd=10,width=10, state="disable", command=partial(self.wybrano_odpowiedz, i)))
             self.button[i].pack({"side": "left"})
 
 
@@ -126,19 +151,24 @@ class Gra(Frame):
         self.ile_w_bazie=0
         self.pytanie_rodzaj=0
         self.odpowiedz_rodzaj=2
+        self.numer_pytania=0
         self.poprawna_odpowiedz=0
         self.pack()
+        self.menu=None
         self.createWidgets()
 
 
 class Menu(Frame):
-    def say_hi(self):
+    def zaczynaj(self):
         print ("hi there, everyone!")
+        self.gra.nowa_rozgrywka()
     def opctions(self):
         print ("opcje")
     def create_window(self):
         window=root.Toplevel(self)
-
+    def update(self):
+        self.czas["text"]="czasomierz:"+str(self.czas_wartosc)
+        self.wynik["text"]="wynik: "+str(self.wynik_wartosc)
     def finish(self):
         print ("zakonczyc gre")
 
@@ -154,8 +184,8 @@ class Menu(Frame):
 
 
         self.hi_there = Button(self)
-        self.hi_there["text"] = "Hello"
-        self.hi_there["command"] = self.say_hi
+        self.hi_there["text"] = "Nowa_rozgrywka"
+        self.hi_there["command"] = self.zaczynaj
         self.hi_there.pack({"side": "top"})
       
         self.ustawienia = Button(self)
@@ -183,6 +213,8 @@ class Menu(Frame):
         self.czas_wartosc=0.0
         self.wynik_wartosc=0
         self.ile_rekordow=0
+        self.gra=None
+        
         self.podpowiedzi_wartosc=4
         self.pack()
         self.createWidgets()
@@ -196,10 +228,10 @@ root.geometry("600x300+100+100")
 m1 = PanedWindow( orient=VERTICAL)
 m1.pack(fill=BOTH, expand=1)
 
-m2 = PanedWindow(m1 ,bg="white",height=500)
+m2 = PanedWindow(m1 ,bg="white",height=250)
 m1.add(m2)
 
-aaa = Label(m1, text="button pane",bg="blue")
+aaa = Label(m1, text="31 lipca 2017, autor :katsid",bg="blue")
 m1.add(aaa)
 
 right = Menu(master=root)
@@ -208,6 +240,8 @@ m2.add(right)
 top = Gra(master=root)
 m2.add(top)
 
-m1.mainloop()
+top.menu=right
+right.gra=top
 
+m1.mainloop()
 root.destroy()
