@@ -1,5 +1,6 @@
 
 import mysql.connector 
+from mysql.connector import errorcode
 from tkinter import *
 from tkinter import messagebox
 import tkinter as tk
@@ -17,6 +18,7 @@ config = {
 
 
 class Gra(Frame):
+    '''
     def policz_rekordy(self):
         cnx = mysql.connector.connect(**config)
         cursor=cnx.cursor()
@@ -25,6 +27,10 @@ class Gra(Frame):
         self.ile_w_bazie=cursor.fetchone()[0]
         cursor.close()
         cnx.close()
+    '''
+
+    def test(self):
+        print("to jest test")
 
     def koniec_rozgrywki(self):
         messagebox.showinfo("Koniec", "Wynik Koncowy: "+str(self.menu.wynik_wartosc))
@@ -41,41 +47,45 @@ class Gra(Frame):
         self.pytanie["text"]="Pytanie nr "+str(self.numer_pytania)+" /10"
         self.pytanie2["text"]="???"
 
+    def podpowiadaj(self):
+        self.menu.wynik_wartosc=self.menu.wynik_wartosc-5
+        self.menu.update()
+        print (self.lista)
+        self.podpowiedz["text"]=str(self.lista[self.poprawna_odpowiedz][2])
+        self.menu.help["state"]="disable"
 
     def losuje_nowy_zestaw(self):
+        self.menu.help["state"]="normal"
         self.numer_pytania=self.numer_pytania+1
-
-
-
-        print ("losujenowy nowe zadanie")
-        #print (number)
-        cnx = mysql.connector.connect(**config)
-        cursor=cnx.cursor()
-
-        #query=("SELECT ID, unicode, nazwa,znaczenie FROM kanjii")
-        query2=("SELECT unicode, nazwa,znaczenie FROM kanjii ORDER BY RAND() LIMIT 4")
-        cursor.execute(query2)
-        """
-        for (ID, unicode, nazwa,znaczenie) in cursor:
-          print("{}, {}, {}, {}".format(
-            ID, unicode, nazwa,znaczenie))
-        """
-        #for (unicode, nazwa,znaczenie) in cursor:
-        #  print("{},{}, {},".format(unicode, nazwa,znaczenie))
-
-        lista=[]
-        lista=cursor.fetchall()
-        print (lista)
-        cursor.close()
-        cnx.close()
-
+        print ("losujenowy nowe znaki")
         self.poprawna_odpowiedz=random.randint(0,self.ilosc_odpowiedzi-1)
-        print("poprawna odowiedz to"+str(self.poprawna_odpowiedz))
+        print("poprawna odowiedz to "+str(self.poprawna_odpowiedz))
+        self.podpowiedz["text"]=" "
+
+        try:
+            cnx = mysql.connector.connect(**config)
+            cursor=cnx.cursor()
+            query2=("SELECT unicode, nazwa,znaczenie FROM kanjii ORDER BY RAND() LIMIT 4")
+            cursor.execute(query2)
+            #lista=[]
+            lista=cursor.fetchall()
+            self.lista=lista
+            print (lista)
+            cursor.close()
+            cnx.close()
+        except mysql.connector.Error as err:
+          if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+          elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+          else:
+            print(err)
+        else:
+          cnx.close()
 
         #self.pytanie["text"]=str(lista[self.poprawna_odpowiedz][0])+"   "+str(lista[self.poprawna_odpowiedz][1])+"  "+lista[self.poprawna_odpowiedz][2]
         self.pytanie["text"]="Pytanie nr "+str(self.numer_pytania)+" /10"
         znak=int(lista[self.poprawna_odpowiedz][0])
-        #unicode_char = u"\u2713" 
         self.pytanie2["text"]=chr(znak)
 
         for i in range(self.ilosc_odpowiedzi):
@@ -86,6 +96,8 @@ class Gra(Frame):
             self.nowe["state"]="disable"
     
     def wybrano_odpowiedz(self,number):
+        self.menu.help["state"]="disable"
+        self.podpowiedz["text"]=str(self.lista[self.poprawna_odpowiedz][2])
         print ("wybrano odpowiedz o nr "+str(number))
         for i in range(self.ilosc_odpowiedzi):
            self.button[i]["state"]="disable"
@@ -110,12 +122,12 @@ class Gra(Frame):
         self.nowe["text"] = "Nowa znaki",
         self.nowe["command"] = partial(self.losuje_nowy_zestaw)
         self.nowe.pack({"side": "left"})
-
+        '''
         self.test = Button(self)
         self.test["text"] = "TEST",
-        self.test["command"] = self.policz_rekordy
+        self.test["command"] = self.test
         self.test.pack({"side": "top"})
-
+        '''
         self.pytanie=Label(self)
         self.pytanie["text"]="???"
         self.pytanie.pack({"side": "top"})
@@ -125,17 +137,11 @@ class Gra(Frame):
         self.pytanie2["font"]="Verdana 20 bold"
         self.pytanie2.pack({"side": "top"})
 
+        self.podpowiedz=Label(self)
+        self.podpowiedz["text"]=" "
+        self.podpowiedz["font"]="Verdana 10 bold"
+        self.podpowiedz.pack({"side": "top"})
 
-        """
-        self.odp[self.ilosc_odpowiedzi]=Button(self)
-        
-        for x in range(0,3):
-            #self.odp[x] = Button(self)
-            self.odp[x]["text"] = "Nowa znaki",
-            self.odp[x]["command"] = self.losuje_nowy_zestaw
-        self.odp.pack({"side": "left"})
-        
-        """
         self.button = []
         for i in range(self.ilosc_odpowiedzi):
             self.button.append(Button(self, text='Game '+str(i+1),bd=10,width=10, state="disable", command=partial(self.wybrano_odpowiedz, i)))
@@ -146,7 +152,7 @@ class Gra(Frame):
     def __init__(self, master=None):
         Frame.__init__(self, master)
         #master.minsize(width=333,height=333)
-        self.lista={}
+        self.lista=[]
         self.ilosc_odpowiedzi=4
         self.ile_w_bazie=0
         self.pytanie_rodzaj=0
@@ -162,8 +168,8 @@ class Menu(Frame):
     def zaczynaj(self):
         print ("hi there, everyone!")
         self.gra.nowa_rozgrywka()
-    def opctions(self):
-        print ("opcje")
+    def podpowiadaj(self):
+        self.gra.podpowiadaj()
     def create_window(self):
         window=root.Toplevel(self)
     def update(self):
@@ -171,6 +177,7 @@ class Menu(Frame):
         self.wynik["text"]="wynik: "+str(self.wynik_wartosc)
     def finish(self):
         print ("zakonczyc gre")
+        self.gra.nowa_rozgrywka()
 
     def createWidgets(self):
 
@@ -188,16 +195,14 @@ class Menu(Frame):
         self.hi_there["command"] = self.zaczynaj
         self.hi_there.pack({"side": "top"})
       
-        self.ustawienia = Button(self)
-        self.ustawienia["text"] = "Options"
-        self.ustawienia["command"] = self.create_window
-        self.ustawienia.pack({"side": "top"})
+        self.help = Button(self)
+        self.help["text"] = "Podpowiedz"
+        self.help["command"] = self.podpowiadaj
+        self.help.pack({"side": "top"})
         
-
 
         self.koniec_rozgrywki = Button(self)
         self.koniec_rozgrywki["text"] = "Zakoncz rozgrywke"
-        #self.koniec_rozgrywki["bg"] = "red"
         self.koniec_rozgrywki["command"] = self.finish
         self.koniec_rozgrywki.pack({"side": "top"})
 
@@ -214,7 +219,6 @@ class Menu(Frame):
         self.wynik_wartosc=0
         self.ile_rekordow=0
         self.gra=None
-        
         self.podpowiedzi_wartosc=4
         self.pack()
         self.createWidgets()
